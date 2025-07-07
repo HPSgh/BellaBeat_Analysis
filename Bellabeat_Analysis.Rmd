@@ -1,0 +1,105 @@
+---
+title: "BellaBeat_Case_Study"
+author: "Htoo Pyae Shan"
+date: "2025-06-12"
+output: pdf_document
+---
+###Business Task
+
+As a junior data analyst, I have been asked to analyze consumers' data on the use of smart devices for health and wellness. The goal is to identify the trends on the use of  non-Bellabeat smart devices and to apply these insights on one of the Bellabeat products. The results will include the key findings and recommendations based on the analysis.
+
+###Data source description
+
+The data source used for the analysis will be from ‘FitBit Fitness Tracker Data’  from Kaggle. The data set includes the data collected under consent through 30 FitBit users containing their daily activity, heart rate, calories burn, steps taken, sleep records and weight info.
+The data is stored in multiple csv files, shaped in long format and a unique id for each user is used to track their activities.
+While the data is creditable and original, its small sample size and collected time (2016) are introducing potential bias. These factors might affect the analysis and recommendation.
+
+###Load Libraries
+```{r}
+library(tidyverse)
+```
+
+###Loda data
+```{r}
+daily_activity_1 <- read_csv("dailyActivity_merged_3.12.16-4.11.16.csv")
+daily_activity_2 <- read_csv("dailyActivity_merged_4.12.16-5.12.16.csv")
+
+daily_activity <-bind_rows(daily_activity_1, daily_activity_2)
+head(daily_activity)
+glimpse(daily_activity)
+```
+
+### Update proper date format
+```{r}
+daily_activity <- daily_activity %>%
+  mutate(ActivityDate = as.Date(ActivityDate, format = "%m/%d/%Y"))
+head(daily_activity)
+```
+###Remove duplicates
+```{r}
+daily_activity <- daily_activity %>%
+  distinct()
+```
+###Check null values
+```{r}
+colSums(is.na(daily_activity))
+```
+###Process Summary
+
+I combined the two daily activity files, update 'ActivityDate' with proper date format and removed duplicated entries. There is no missing values found in the data set.
+
+###Summarising activity levels
+```{r}
+daily_activity %>%
+  summarise(
+    avg_very_active= mean(VeryActiveMinutes),
+    avg_fairly_active= mean(FairlyActiveMinutes),
+    avg_lightly_active= mean(LightlyActiveMinutes),
+    avg_sedentary= mean(SedentaryMinutes)
+  )
+```
+
+###Adding visuals
+```{r}
+activity_summary <- daily_activity %>%
+  summarise(
+    "Very Active"= mean(VeryActiveMinutes),
+    "Farily Active"= mean(FairlyActiveMinutes),
+    "Lightly Active"= mean(LightlyActiveMinutes),
+  )%>%
+pivot_longer(cols = everything(), names_to = "Activity", values_to = "Minutes")
+
+ggplot(activity_summary, aes(x= Activity, y= Minutes, fill= Activity))+ geom_col()+ labs(title= "Average time-spent in each activity level", y= "Minutes")+ theme_minimal()
+```
+### Reshaping apprpriate Bar plot
+```{r}
+ggplot(activity_summary, aes(x = Activity, y = Minutes, fill = Activity)) +
+  geom_col() +
+  facet_wrap(~Activity, scales = "free_y") +  # Separate y-axis for each
+  labs(title = "Average Time Spent in Each Activity Level") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank())  # Remove x-axis labels as redundant
+```
+###TotalSteps and BurnedCalories correlation
+```{r}
+ggplot(daily_activity, aes(x= TotalSteps, y=Calories))+
+  geom_point(alpha= 0.5)+
+  geom_smooth(method = "lm", se= FALSE, color= "red")+
+  labs(title = "TotalSteps VS Calories Correlation",x="Total Steps", y="Calories Burned")
+```
+###TotalDistance and BurnedCalories correlation
+```{r}
+ggplot(daily_activity, aes(x= TotalDistance, y=Calories))+
+  geom_point(alpha= 0.5)+
+  geom_smooth(method = "lm", se= FALSE, color= "darkgreen")+
+  labs(title = "TotalDistance VS Calories Correlation",x="Total Distance", y="Calories Burned")
+```
+###Key findings
+
+*Users spend the majority of their time in lightly active state.
+*highly active minutes and steps are patently correlated with calories burned.
+
+###Recommendation for BellaBeat
+
+*Bellabeat can use its devices (like Leaf or Time) to encourage consistent low-intensity movement by promoting daily step goals and reminders.
+*Design features or content (like gamification or guided challenges) aimed at users with sedentary habits.
